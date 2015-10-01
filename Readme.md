@@ -1,4 +1,4 @@
-# trevor
+# Trevor
 
 Your own Travis CI to run tests locally.
 
