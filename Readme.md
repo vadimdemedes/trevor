@@ -19,6 +19,11 @@ That's why I created Trevor. It reads `.travis.yml` and runs tests in all versio
 Now, you can test before push and keep your git history clean.
 
 
+### Requirements
+
+- Docker
+
+
 ### Installation
 
 ```
