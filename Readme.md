@@ -4,8 +4,7 @@ Your own Travis CI to run tests locally.
 
 <h1 align="center">
   <br>
-  <img width="300" src="media/logo.png">
-  <br>
+  <img width="200" src="media/logo.png">
   <br>
   <br>
 </h1>
