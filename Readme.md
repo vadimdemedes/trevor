@@ -33,14 +33,27 @@ $ npm install trevor --global
 
 ### Usage
 
+Given the following `.travis.yml` file:
+
 ```
-$ cd my-project
+language: node_js
+node_js:
+  - 'stable'
+  - '0.12'
+  - '0.10'
+```
+
+Run `trevor` in project's directory:
+
+```
 $ trevor
 ```
 
+Output:
+
 ![](media/demo.gif)
 
-**Advice**: Set your test script in `package.json` in `scripts.test` and use the following Makefile:
+**Tip**: Set your test script in `package.json` in `scripts.test` and use the following Makefile:
 
 ```
 test:
