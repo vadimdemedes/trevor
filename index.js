@@ -13,7 +13,7 @@ var format = require('util').format;
 var table = require('text-table');
 var sushi = require('sushi');
 var chalk = require('chalk');
-var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var each = require('each-async');
 var join = require('path').join;
 var yaml = require('yamljs');
@@ -116,7 +116,7 @@ cli.on('index', function (args) {
 
     // remove hidden Dockerfiles
     versions.forEach(function (version) {
-      // fs.unlinkSync(join(path, '.' + version + '.dockerfile'));
+      fs.unlinkSync(join(path, '.' + version + '.dockerfile'));
     });
 
     process.exit(errors.length);
@@ -151,7 +151,7 @@ function build (name, version, callback) {
 }
 
 function test (name, version, callback) {
-  var command = format('docker run --rm  test-%s-%s npm test', name, version);
+  var command = format('docker run --rm test-%s-%s npm test', name, version);
 
   run(command, callback);
 }
@@ -162,9 +162,17 @@ function run (command, options, callback) {
     options = {};
   }
 
+  var parts = command.split(' ');
+  var exec = parts[0];
+  var args = parts.slice(1);
+
   var output = '';
 
-  var ps = exec(command, options, function (err) {
+  var ps = spawn(exec, args, options);
+
+  ps.on('close', function (code) {
+    var err = code > 0;
+
     callback(err, output);
   });
 
