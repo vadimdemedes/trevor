@@ -6,17 +6,16 @@
  * Dependencies
  */
 
+var fetchStableVersion = require('stable-node-version');
 var logUpdate = require('log-update');
 var Promise = require('bluebird');
 var figures = require('figures');
 var format = require('util').format;
-var semver = require('semver');
 var table = require('text-table');
 var chalk = require('chalk');
 var spawn = require('child_process').spawn;
 var join = require('path').join;
 var yaml = require('yamljs');
-var got = require('got');
 var fs = require('mz/fs');
 
 
@@ -231,41 +230,6 @@ function getVersions () {
       if (version === 'stable') {
         return fetchStableVersion();
       }
-
-      return version;
-    });
-}
-
-
-/**
- * Fetch stable Node.js version
- */
-
-function fetchStableVersion () {
-  // thanks to github.com/tj/n
-  var versionRegex = /[0-9]+\.[0-9]*[02468]\.[0-9]+/;
-
-  return got('https://nodejs.org/dist/')
-    .then(function (res) {
-      var response = res.body
-        .split('\n')
-        .filter(function (line) {
-          return /\<\/a\>/.test(line);
-        })
-        .filter(function (line) {
-          return versionRegex.test(line);
-        })
-        .map(function (line) {
-          return versionRegex.exec(line)[0];
-        });
-
-      response.sort(function (a, b) {
-        return semver.gt(a, b);
-      });
-
-      response.reverse();
-
-      var version = response[0];
 
       return version;
     });

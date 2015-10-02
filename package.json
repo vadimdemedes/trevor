@@ -14,10 +14,9 @@
     "bluebird": "^2.10.2",
     "chalk": "^1.1.1",
     "figures": "^1.4.0",
-    "got": "^4.2.0",
     "log-update": "^1.0.1",
     "mz": "^2.0.0",
-    "semver": "^5.0.3",
+    "stable-node-version": "^1.0.0",
     "text-table": "^0.2.0",
     "yamljs": "^0.2.4"
   },
