@@ -24,10 +24,11 @@ var fs = require('fs');
  * States
  */
 
-var STATE_BUILDING = 0;
-var STATE_RUNNING = 1;
-var STATE_SUCCESS = 2;
-var STATE_ERROR = 3;
+var STATE_DOWNLOADING = 0;
+var STATE_BUILDING = 1;
+var STATE_RUNNING = 2;
+var STATE_SUCCESS = 3;
+var STATE_ERROR = 4;
 
 
 /**
@@ -52,27 +53,17 @@ cli.on('index', function (args) {
     copy(join(path, '.gitignore'), join(path, '.dockerignore'));
   }
 
-  // create a hidden Dockerfile for each version
-  versions.forEach(function (version) {
-    var tag = version === 'stable' ? '' : version + '-';
-    var dockerfile = format('FROM node:%sonbuild', tag);
-
-    fs.writeFileSync(join(path, '.' + version + '.dockerfile'), dockerfile);
-  });
-
   var state = {};
   var errors = {};
 
   versions.forEach(function (version) {
-    state[version] = STATE_BUILDING;
+    state[version] = STATE_DOWNLOADING;
   });
 
   updateState(state);
 
   each(versions, function (version, index, done) {
-    var command = format('docker build -t test-%s-%s -f .%s.dockerfile .', pkg.name, version, version);
-
-    run(command, { cwd: path }, function (err, output) {
+    pull(version, function (err, output) {
       if (err) {
         state[version] = STATE_ERROR;
         errors[version] = output;
@@ -82,12 +73,10 @@ cli.on('index', function (args) {
         return done();
       }
 
-      var command = format('docker run --rm test-%s-%s %s', pkg.name, version, 'npm test');
-
-      state[version] = STATE_RUNNING;
+      state[version] = STATE_BUILDING;
       updateState(state);
 
-      run(command, function (err, output) {
+      build(pkg.name, version, function (err, output) {
         if (err) {
           state[version] = STATE_ERROR;
           errors[version] = output;
@@ -97,10 +86,24 @@ cli.on('index', function (args) {
           return done();
         }
 
-        state[version] = STATE_SUCCESS;
+        state[version] = STATE_RUNNING;
         updateState(state);
 
-        done();
+        test(pkg.name, version, function (err, output) {
+          if (err) {
+            state[version] = STATE_ERROR;
+            errors[version] = output;
+
+            updateState(state);
+
+            return done();
+          }
+
+          state[version] = STATE_SUCCESS;
+          updateState(state);
+
+          done();
+        });
       });
     });
   }, function () {
@@ -113,7 +116,7 @@ cli.on('index', function (args) {
 
     // remove hidden Dockerfiles
     versions.forEach(function (version) {
-      fs.unlinkSync(join(path, '.' + version + '.dockerfile'));
+      // fs.unlinkSync(join(path, '.' + version + '.dockerfile'));
     });
 
     process.exit(errors.length);
@@ -126,6 +129,32 @@ cli.run();
 /**
  * Utilities
  */
+
+function pull (version, callback) {
+  var tag = version === 'stable' ? '' : version + '-';
+  var image = format('node:%sonbuild', tag);
+
+  var command = format('docker pull %s', image);
+
+  run(command, callback);
+}
+
+function build (name, version, callback) {
+  var tag = version === 'stable' ? '' : version + '-';
+  var dockerfile = format('FROM node:%sonbuild', tag);
+
+  fs.writeFileSync(join(path, '.' + version + '.dockerfile'), dockerfile);
+
+  var command = format('docker build -t test-%s-%s -f .%s.dockerfile .', name, version, version);
+
+  run(command, { cwd: path }, callback);
+}
+
+function test (name, version, callback) {
+  var command = format('docker run --rm  test-%s-%s npm test', name, version);
+
+  run(command, callback);
+}
 
 function run (command, options, callback) {
   if (!callback) {
@@ -154,8 +183,13 @@ function updateState (state) {
     var icon;
 
     switch (state[version]) {
+      case STATE_DOWNLOADING:
+        message = chalk.grey('downloading base image');
+        icon = chalk.grey(figures.circleDotted);
+        break;
+
       case STATE_BUILDING:
-        message = chalk.grey('building');
+        message = chalk.grey('building environment');
         icon = chalk.grey(figures.circleDotted);
         break;
 
