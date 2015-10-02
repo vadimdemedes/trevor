@@ -10,14 +10,14 @@ var logUpdate = require('log-update');
 var Promise = require('bluebird');
 var figures = require('figures');
 var format = require('util').format;
+var semver = require('semver');
 var table = require('text-table');
-var sushi = require('sushi');
 var chalk = require('chalk');
 var spawn = require('child_process').spawn;
-var each = require('each-async');
 var join = require('path').join;
 var yaml = require('yamljs');
-var fs = require('fs');
+var got = require('got');
+var fs = require('mz/fs');
 
 
 /**
@@ -38,152 +38,145 @@ var STATE_ERROR = 4;
 var path = process.cwd();
 var pkg = require(join(path, 'package.json'));
 
-var cli = sushi();
+// if there's no .dockerignore
+// copy .gitignore to .dockerignore
+var exists = stat(join(path, '.dockerignore'));
 
-cli.on('index', function (args) {
-  var config = fs.readFileSync(join(path, '.travis.yml'), 'utf-8');
+if (!exists) {
+  copy(join(path, '.gitignore'), join(path, '.dockerignore'));
+}
 
-  var versions = yaml.parse(config).node_js || ['stable'];
+var state = {};
+var errors = {};
 
-  // if there's no .dockerignore
-  // copy .gitignore to .dockerignore
-  var exists = stat(join(path, '.dockerignore'));
+getVersions()
+  .map(function (version) {
+    var context = {
+      name: pkg.name,
+      version: version
+    };
 
-  if (!exists) {
-    copy(join(path, '.gitignore'), join(path, '.dockerignore'));
-  }
-
-  var state = {};
-  var errors = {};
-
-  versions.forEach(function (version) {
     state[version] = STATE_DOWNLOADING;
-  });
 
-  updateState(state);
+    updateState(state);
 
-  each(versions, function (version, index, done) {
-    pull(version, function (err, output) {
-      if (err) {
-        state[version] = STATE_ERROR;
-        errors[version] = output;
-
+    return Promise.resolve(context)
+      .then(pull)
+      .tap(function () {
+        state[version] = STATE_BUILDING;
         updateState(state);
-
-        return done();
-      }
-
-      state[version] = STATE_BUILDING;
-      updateState(state);
-
-      build(pkg.name, version, function (err, output) {
-        if (err) {
-          state[version] = STATE_ERROR;
-          errors[version] = output;
-
-          updateState(state);
-
-          return done();
-        }
-
+      })
+      .then(build)
+      .tap(function () {
         state[version] = STATE_RUNNING;
         updateState(state);
+      })
+      .then(test)
+      .tap(function () {
+        state[version] = STATE_SUCCESS;
+        updateState(state);
+      })
+      .catch(function (output) {
+        state[version] = STATE_ERROR;
+        errors[version] = output;
+        updateState(state);
+      })
+      .then(function () {
+        var tmpPath = join(path, '.' + version + '.dockerfile');
 
-        test(pkg.name, version, function (err, output) {
-          if (err) {
-            state[version] = STATE_ERROR;
-            errors[version] = output;
-
-            updateState(state);
-
-            return done();
-          }
-
-          state[version] = STATE_SUCCESS;
-          updateState(state);
-
-          done();
-        });
+        return fs.unlink(tmpPath);
       });
-    });
-  }, function () {
+  })
+  .then(function () {
     logUpdate.done();
 
+    // display output from failed node.js versions
     Object.keys(errors).forEach(function (version) {
       console.log('\n   ' + chalk.red(figures.cross + '  node v' + version + ':'));
       console.log(errors[version]);
     });
 
-    // remove hidden Dockerfiles
-    versions.forEach(function (version) {
-      fs.unlinkSync(join(path, '.' + version + '.dockerfile'));
-    });
-
     process.exit(errors.length);
   });
-});
-
-cli.run();
 
 
 /**
  * Utilities
  */
 
-function pull (version, callback) {
-  var tag = version === 'stable' ? '' : version + '-';
-  var image = format('node:%sonbuild', tag);
 
-  var command = format('docker pull %s', image);
+/**
+ * Pull docker image for a specific node version
+ */
 
-  run(command, callback);
+function pull (context) {
+  var image = format('node:%s-onbuild', context.version);
+
+  return run('docker', ['pull', image]).return(context);
 }
 
-function build (name, version, callback) {
-  var tag = version === 'stable' ? '' : version + '-';
-  var dockerfile = format('FROM node:%sonbuild', tag);
 
-  fs.writeFileSync(join(path, '.' + version + '.dockerfile'), dockerfile);
+/**
+ * Build docker image for a specific node version
+ */
 
-  var command = format('docker build -t test-%s-%s -f .%s.dockerfile .', name, version, version);
+function build (context) {
+  var dockerfile = format('FROM node:%s-onbuild', context.version);
+  var tmpPath = join(path, '.' + context.version + '.dockerfile');
 
-  run(command, { cwd: path }, callback);
+  return fs.writeFile(tmpPath, dockerfile)
+    .then(function () {
+      var image = format('test-%s-%s', context.name, context.version);
+
+      return run('docker', ['build', '-t', image, '-f', tmpPath, '.']).return(context);
+    });
 }
 
-function test (name, version, callback) {
-  var command = format('docker run --rm test-%s-%s npm test', name, version);
 
-  run(command, callback);
+/**
+ * Run `npm test`
+ */
+
+function test (context) {
+  var image = format('test-%s-%s', context.name, context.version);
+
+  return run('docker', ['run', '--rm', image, 'npm', 'test']).return(context);
 }
 
-function run (command, options, callback) {
-  if (!callback) {
-    callback = options;
-    options = {};
-  }
 
-  var parts = command.split(' ');
-  var exec = parts[0];
-  var args = parts.slice(1);
+/**
+ * spawn() helper, that concatenates stdout & stderr
+ * and returns a Promise
+ */
 
-  var output = '';
+function run (command, args, options) {
+  return new Promise(function (resolve, reject) {
+    var output = '';
 
-  var ps = spawn(exec, args, options);
+    var ps = spawn(command, args, options);
 
-  ps.on('close', function (code) {
-    var err = code > 0;
+    ps.on('close', function (code) {
+      if (code > 0) {
+        return reject(output);
+      }
 
-    callback(err, output);
+      resolve();
+    });
+
+    ps.stdout.on('data', function (data) {
+      output += data;
+    });
+
+    ps.stderr.on('data', function (data) {
+      output += data;
+    });
   });
-
-  ps.stdout.on('data', function (data) {
-    output += data;
-  });
-
-  ps.stderr.on('data', function (data) {
-    output += data;
-  });
 }
+
+
+/**
+ * Display current state
+ */
 
 function updateState (state) {
   var items = Object.keys(state).map(function (version) {
@@ -223,6 +216,59 @@ function updateState (state) {
   var output = '\n' + table(items, { align: ['l', 'l', 'r', 'l'] });
 
   logUpdate(output);
+}
+
+/**
+ * Get requested Node.js versions
+ */
+
+function getVersions () {
+  return fs.readFile(join(path, '.travis.yml'), 'utf-8')
+    .then(function (source) {
+      return yaml.parse(source).node_js || ['stable'];
+    })
+    .map(function (version) {
+      if (version === 'stable') {
+        return fetchStableVersion();
+      }
+
+      return version;
+    });
+}
+
+
+/**
+ * Fetch stable Node.js version
+ */
+
+function fetchStableVersion () {
+  // thanks to github.com/tj/n
+  var versionRegex = /[0-9]+\.[0-9]*[02468]\.[0-9]+/;
+
+  return got('https://nodejs.org/dist/')
+    .then(function (res) {
+      var response = res.body
+        .split('\n')
+        .filter(function (line) {
+          return /\<\/a\>/.test(line);
+        })
+        .filter(function (line) {
+          return versionRegex.test(line);
+        })
+        .map(function (line) {
+          return versionRegex.exec(line)[0];
+        });
+
+      response.sort(function (a, b) {
+        return semver.gt(a, b);
+      });
+
+      response.reverse();
+
+      var version = response[0];
+
+      return version;
+    });
 }
 
 function copy (src, dest) {
