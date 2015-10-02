@@ -82,7 +82,7 @@ cli.on('index', function (args) {
         return done();
       }
 
-      var command = format('docker run --rm test-%s-%s %s', pkg.name, version, pkg.scripts.test);
+      var command = format('docker run --rm test-%s-%s %s', pkg.name, version, 'npm test');
 
       state[version] = STATE_RUNNING;
       updateState(state);
