@@ -95,7 +95,7 @@ getVersions()
       console.log(errors[version]);
     });
 
-    process.exit(errors.length);
+    process.exit(Object.keys(errors).length);
   });
 
 
