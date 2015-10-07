@@ -17,6 +17,7 @@ var spawn = require('child_process').spawn;
 var join = require('path').join;
 var yaml = require('yamljs');
 var fs = require('mz/fs');
+var objectAssign = require('object-assign');
 
 
 /**
@@ -47,13 +48,20 @@ if (!exists) {
 
 var state = {};
 var errors = {};
+var baseContext = {
+  name: pkg.name
+};
 
-getVersions()
+getServices()
+  .then(function (services) {
+    baseContext.services = services || [];
+
+    return getVersions();
+  })
   .map(function (version) {
-    var context = {
-      name: pkg.name,
+    var context = objectAssign({}, baseContext, {
       version: version
-    };
+    });
 
     state[version] = STATE_DOWNLOADING;
 
@@ -139,7 +147,13 @@ function build (context) {
 function test (context) {
   var image = format('test-%s-%s', context.name, context.version);
 
-  return run('docker', ['run', '--rm', image, 'npm', 'test']).return(context);
+  var args = ['run', '--rm', image, 'npm', 'test'];
+
+  context.services.forEach(function (service) {
+    args.splice(2, 0, '--link', service + ':' + service);
+  });
+
+  return run('docker', args).return(context);
 }
 
 
@@ -232,6 +246,13 @@ function getVersions () {
       }
 
       return version;
+    });
+}
+
+function getServices () {
+  return fs.readFile(join(path, '.travis.yml'), 'utf-8')
+    .then(function (source) {
+      return yaml.parse(source).services || [];
     });
 }
 
