@@ -51,7 +51,7 @@ var errors = {};
 getVersions()
   .map(function (version) {
     var context = {
-      name: pkg.name,
+      name: pkg.name.toLowerCase(),
       version: version
     };
 
