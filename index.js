@@ -83,7 +83,7 @@ getVersions()
       .then(function () {
         var tmpPath = join(path, '.' + version + '.dockerfile');
 
-        return fs.unlink(tmpPath);
+        return fs.unlink(tmpPath).catch(function () {});
       });
   })
   .then(function () {
