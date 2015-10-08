@@ -138,19 +138,25 @@ function build (context) {
 
 function test (context) {
   var image = format('test-%s-%s', context.name, context.version);
+
+  var env = {
+    CONTINUOUS_INTEGRATION: true,
+    TRAVIS: true,
+    CI: true
+  };
+
   var args = [
     'run',
-    '--rm',
-    '-e',
-    'CI=true',
-    '-e',
-    'TRAVIS=true',
-    '-e',
-    'CONTINUOUS_INTEGRATION=true',
-    image,
-    'npm',
-    'test'
+    '--rm'
   ];
+
+  Object.keys(env).forEach(function (name) {
+    var arg = format('%s=%s', name, env[name]);
+
+    args.push('-e', arg);
+  });
+
+  args.push(image, 'npm', 'test');
 
   return run('docker', args).return(context);
 }
