@@ -138,8 +138,21 @@ function build (context) {
 
 function test (context) {
   var image = format('test-%s-%s', context.name, context.version);
+  var args = [
+    'run',
+    '--rm',
+    '-e',
+    'CI=true',
+    '-e',
+    'TRAVIS=true',
+    '-e',
+    'CONTINUOUS_INTEGRATION=true',
+    image,
+    'npm',
+    'test'
+  ];
 
-  return run('docker', ['run', '--rm', image, 'npm', 'test']).return(context);
+  return run('docker', args).return(context);
 }
 
 
