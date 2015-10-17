@@ -14,7 +14,9 @@
     "bluebird": "^2.10.2",
     "chalk": "^1.1.1",
     "figures": "^1.4.0",
+    "indent-string": "^2.1.0",
     "log-update": "^1.0.1",
+    "minimist": "^1.2.0",
     "mz": "^2.0.0",
     "stable-node-version": "^1.0.0",
     "text-table": "^0.2.0",
@@ -30,7 +32,10 @@
     "rules": {
       "no-multiple-empty-lines": 0,
       "space-before-function-paren": 0,
-      "object-curly-spacing": [2, "always"]
+      "object-curly-spacing": [
+        2,
+        "always"
+      ]
     }
   },
   "devDependencies": {

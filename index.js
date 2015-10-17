@@ -8,8 +8,10 @@
 
 var fetchStableVersion = require('stable-node-version');
 var logUpdate = require('log-update');
+var minimist = require('minimist');
 var Promise = require('bluebird');
 var figures = require('figures');
+var indent = require('indent-string');
 var format = require('util').format;
 var table = require('text-table');
 var chalk = require('chalk');
@@ -17,6 +19,41 @@ var spawn = require('child_process').spawn;
 var join = require('path').join;
 var yaml = require('yamljs');
 var fs = require('mz/fs');
+
+
+/**
+ * CLI
+ */
+
+var argv = process.argv.slice(2);
+var args = minimist(argv, {
+	alias: {
+		h: 'help'
+	},
+	boolean: ['h']
+});
+
+if (args.help) {
+	var help = [
+		'',
+		'Usage: trevor [options]',
+		'',
+		'Options:',
+		'',
+		'  -h, --help     Show this help',
+		'',
+		'Required files (in the current directory):',
+		'',
+		'  - package.json',
+		'  - .travis.yml',
+		''
+	].join('\n');
+
+	help = indent(help, ' ', 2);
+
+	console.log(help);
+	process.exit();
+}
 
 
 /**
