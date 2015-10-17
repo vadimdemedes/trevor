@@ -30,7 +30,7 @@ var args = minimist(argv, {
 	alias: {
 		h: 'help'
 	},
-	boolean: ['h']
+	boolean: ['h', 'no-clean']
 });
 
 if (args.help) {
@@ -41,6 +41,7 @@ if (args.help) {
 		'Options:',
 		'',
 		'  -h, --help     Show this help',
+		'  --no-clean     Don\'t remove the Docker image after tests',
 		'',
 		'Required files (in the current directory):',
 		'',
@@ -62,9 +63,10 @@ if (args.help) {
 
 var STATE_DOWNLOADING = 0;
 var STATE_BUILDING = 1;
-var STATE_RUNNING = 2;
-var STATE_SUCCESS = 3;
-var STATE_ERROR = 4;
+var STATE_CLEANING = 2;
+var STATE_RUNNING = 3;
+var STATE_SUCCESS = 4;
+var STATE_ERROR = 5;
 
 
 /**
@@ -108,6 +110,11 @@ getVersions()
 				updateState(state);
 			})
 			.then(test)
+			.tap(function () {
+				state[version] = STATE_CLEANING;
+				updateState(state);
+			})
+			.then(clean)
 			.tap(function () {
 				state[version] = STATE_SUCCESS;
 				updateState(state);
@@ -200,6 +207,21 @@ function test (context) {
 
 
 /**
+ * Remove docker image after tests
+ */
+
+function clean (context) {
+	if (args['clean'] === false) {
+		return Promise.resolve();
+	}
+
+	var image = format('test-%s-%s', context.name, context.version);
+
+	return run('docker', ['rmi', image]).return(context);
+}
+
+
+/**
  * spawn() helper, that concatenates stdout & stderr
  * and returns a Promise
  */
@@ -246,6 +268,11 @@ function updateState (state) {
 
 			case STATE_BUILDING:
 				message = chalk.grey('building environment');
+				icon = chalk.grey(figures.circleDotted);
+				break;
+
+			case STATE_CLEANING:
+				message = chalk.grey('cleaning up');
 				icon = chalk.grey(figures.circleDotted);
 				break;
 
