@@ -6,67 +6,51 @@
  * Dependencies
  */
 
-var fetchStableVersion = require('stable-node-version');
 var logUpdate = require('log-update');
-var minimist = require('minimist');
 var Promise = require('bluebird');
 var figures = require('figures');
-var indent = require('indent-string');
-var format = require('util').format;
-var table = require('text-table');
 var chalk = require('chalk');
-var spawn = require('child_process').spawn;
 var join = require('path').join;
-var yaml = require('yamljs');
+var meow = require('meow');
 var fs = require('mz/fs');
+
+var updateState = require('./lib/update-state');
+var getVersions = require('./lib/get-versions');
+var pullImage = require('./lib/pull-image');
+var states = require('./lib/states');
+var clean = require('./lib/clean');
+var build = require('./lib/build');
+var copy = require('./util/copy');
+var stat = require('./util/stat');
+var test = require('./lib/test');
 
 
 /**
  * CLI
  */
 
-var argv = process.argv.slice(2);
-var args = minimist(argv, {
-	alias: {
-		h: 'help'
-	},
-	boolean: ['h', 'no-clean']
-});
-
-if (args.help) {
-	var help = [
-		'',
+var cli = meow({
+	help: [
 		'Usage: trevor [options]',
 		'',
 		'Options:',
 		'',
-		'  -h, --help     Show this help',
-		'  --no-clean     Don\'t remove the Docker image after tests',
+		'  -h, --help    Show this help',
+		'  --no-clean    Don\' remove the Docker image after tests',
 		'',
 		'Required files (in the current directory):',
 		'',
 		'  - package.json',
-		'  - .travis.yml',
-		''
-	].join('\n');
-
-	help = indent(help, ' ', 2);
-
-	console.log(help);
-	process.exit();
-}
-
-
-/**
- * States
- */
-
-var STATE_DOWNLOADING = 0;
-var STATE_BUILDING = 1;
-var STATE_CLEANING = 2;
-var STATE_RUNNING = 3;
-var STATE_SUCCESS = 4;
-var STATE_ERROR = 5;
+		'  - .travis.yml'
+	]
+}, {
+	alias: {
+		h: 'help'
+	},
+	boolean: [
+		'h'
+	]
+});
 
 
 /**
@@ -87,40 +71,42 @@ if (!exists) {
 var state = {};
 var errors = {};
 
-getVersions()
+getVersions(join(path, '.travis.yml'))
 	.map(function (version) {
 		var context = {
+			version: version,
 			name: pkg.name.toLowerCase(),
-			version: version
+			path: path,
+			args: cli.flags
 		};
 
-		state[version] = STATE_DOWNLOADING;
-
-		updateState(state);
-
 		return Promise.resolve(context)
-			.then(pull)
 			.tap(function () {
-				state[version] = STATE_BUILDING;
+				state[version] = states.downloading;
+				updateState(state);
+			})
+			.then(pullImage)
+			.tap(function () {
+				state[version] = states.building;
 				updateState(state);
 			})
 			.then(build)
 			.tap(function () {
-				state[version] = STATE_RUNNING;
+				state[version] = states.running;
 				updateState(state);
 			})
 			.then(test)
 			.tap(function () {
-				state[version] = STATE_CLEANING;
+				state[version] = states.cleaning;
 				updateState(state);
 			})
 			.then(clean)
 			.tap(function () {
-				state[version] = STATE_SUCCESS;
+				state[version] = states.success;
 				updateState(state);
 			})
 			.catch(function (output) {
-				state[version] = STATE_ERROR;
+				state[version] = states.error;
 				errors[version] = output;
 				updateState(state);
 			})
@@ -141,194 +127,3 @@ getVersions()
 
 		process.exit(Object.keys(errors).length);
 	});
-
-
-/**
- * Utilities
- */
-
-
-/**
- * Pull docker image for a specific node version
- */
-
-function pull (context) {
-	var image = format('node:%s-onbuild', context.version);
-
-	return run('docker', ['pull', image]).return(context);
-}
-
-
-/**
- * Build docker image for a specific node version
- */
-
-function build (context) {
-	var dockerfile = format('FROM node:%s-onbuild', context.version);
-	var tmpPath = join(path, '.' + context.version + '.dockerfile');
-
-	return fs.writeFile(tmpPath, dockerfile)
-		.then(function () {
-			var image = format('test-%s-%s', context.name, context.version);
-
-			return run('docker', ['build', '-t', image, '-f', tmpPath, '.']).return(context);
-		});
-}
-
-
-/**
- * Run `npm test`
- */
-
-function test (context) {
-	var image = format('test-%s-%s', context.name, context.version);
-
-	var env = {
-		CONTINUOUS_INTEGRATION: true,
-		TRAVIS: true,
-		CI: true
-	};
-
-	var args = [
-		'run',
-		'--rm'
-	];
-
-	Object.keys(env).forEach(function (name) {
-		var arg = format('%s=%s', name, env[name]);
-
-		args.push('-e', arg);
-	});
-
-	args.push(image, 'npm', 'test');
-
-	return run('docker', args).return(context);
-}
-
-
-/**
- * Remove docker image after tests
- */
-
-function clean (context) {
-	if (args['clean'] === false) {
-		return Promise.resolve();
-	}
-
-	var image = format('test-%s-%s', context.name, context.version);
-
-	return run('docker', ['rmi', image]).return(context);
-}
-
-
-/**
- * spawn() helper, that concatenates stdout & stderr
- * and returns a Promise
- */
-
-function run (command, args, options) {
-	return new Promise(function (resolve, reject) {
-		var output = '';
-
-		var ps = spawn(command, args, options);
-
-		ps.on('close', function (code) {
-			if (code > 0) {
-				return reject(output);
-			}
-
-			resolve();
-		});
-
-		ps.stdout.on('data', function (data) {
-			output += data;
-		});
-
-		ps.stderr.on('data', function (data) {
-			output += data;
-		});
-	});
-}
-
-
-/**
- * Display current state
- */
-
-function updateState (state) {
-	var items = Object.keys(state).map(function (version) {
-		var message;
-		var icon;
-
-		switch (state[version]) {
-			case STATE_DOWNLOADING:
-				message = chalk.grey('downloading base image');
-				icon = chalk.grey(figures.circleDotted);
-				break;
-
-			case STATE_BUILDING:
-				message = chalk.grey('building environment');
-				icon = chalk.grey(figures.circleDotted);
-				break;
-
-			case STATE_CLEANING:
-				message = chalk.grey('cleaning up');
-				icon = chalk.grey(figures.circleDotted);
-				break;
-
-			case STATE_RUNNING:
-				message = chalk.grey('running');
-				icon = chalk.grey(figures.circleDotted);
-				break;
-
-			case STATE_SUCCESS:
-				message = chalk.green('success');
-				icon = chalk.green(figures.tick);
-				break;
-
-			case STATE_ERROR:
-			default:
-				message = chalk.red('error');
-				icon = chalk.red(figures.cross);
-				break;
-		}
-
-		return [' ', icon, version + ':', message];
-	});
-
-	var output = '\n' + table(items, { align: ['l', 'l', 'r', 'l'] });
-
-	logUpdate(output);
-}
-
-/**
- * Get requested Node.js versions
- */
-
-function getVersions () {
-	return fs.readFile(join(path, '.travis.yml'), 'utf-8')
-		.then(function (source) {
-			return yaml.parse(source).node_js || ['stable'];
-		})
-		.map(function (version) {
-			if (version === 'stable') {
-				return fetchStableVersion();
-			}
-
-			return version;
-		});
-}
-
-function copy (src, dest) {
-	var source = fs.readFileSync(src);
-
-	fs.writeFileSync(dest, source);
-}
-
-function stat (path) {
-	try {
-		return fs.statSync(path);
-	} catch (_) {
-		return false;
-	}
-}
