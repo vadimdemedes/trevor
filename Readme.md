@@ -10,7 +10,7 @@ Your own Travis CI to run tests locally.
 </h1>
 
 
-### Purpose
+## Purpose
 
 I often need to run tests for multiple versions of Node.js.
 But I don't want to switch versions manually using `n`/`nvm` or push the code to Travis CI just to run the tests.
@@ -19,19 +19,19 @@ That's why I created Trevor. It reads `.travis.yml` and runs tests in all versio
 Now, you can test before push and keep your git history clean.
 
 
-### Requirements
+## Requirements
 
 - Docker
 
 
-### Installation
+## Installation
 
 ```
 $ npm install trevor --global
 ```
 
 
-### Usage
+## Usage
 
 Given the following `.travis.yml` file:
 
@@ -63,6 +63,6 @@ test:
 To run the tests via Trevor, run `make test`. Travis CI will continue to run your tests as before, by reading a command from `package.json`.
 
 
-### License
+## License
 
-MIT © [vdemedes](https://github.com/vdemedes)
+MIT © [Vadim Demedes](https://github.com/vdemedes)
