@@ -42,61 +42,61 @@ var pkg = require(join(path, 'package.json'));
 var exists = stat(join(path, '.dockerignore'));
 
 if (!exists) {
-  copy(join(path, '.gitignore'), join(path, '.dockerignore'));
+	copy(join(path, '.gitignore'), join(path, '.dockerignore'));
 }
 
 var state = {};
 var errors = {};
 
 getVersions()
-  .map(function (version) {
-    var context = {
-      name: pkg.name.toLowerCase(),
-      version: version
-    };
+	.map(function (version) {
+		var context = {
+			name: pkg.name.toLowerCase(),
+			version: version
+		};
 
-    state[version] = STATE_DOWNLOADING;
+		state[version] = STATE_DOWNLOADING;
 
-    updateState(state);
+		updateState(state);
 
-    return Promise.resolve(context)
-      .then(pull)
-      .tap(function () {
-        state[version] = STATE_BUILDING;
-        updateState(state);
-      })
-      .then(build)
-      .tap(function () {
-        state[version] = STATE_RUNNING;
-        updateState(state);
-      })
-      .then(test)
-      .tap(function () {
-        state[version] = STATE_SUCCESS;
-        updateState(state);
-      })
-      .catch(function (output) {
-        state[version] = STATE_ERROR;
-        errors[version] = output;
-        updateState(state);
-      })
-      .then(function () {
-        var tmpPath = join(path, '.' + version + '.dockerfile');
+		return Promise.resolve(context)
+			.then(pull)
+			.tap(function () {
+				state[version] = STATE_BUILDING;
+				updateState(state);
+			})
+			.then(build)
+			.tap(function () {
+				state[version] = STATE_RUNNING;
+				updateState(state);
+			})
+			.then(test)
+			.tap(function () {
+				state[version] = STATE_SUCCESS;
+				updateState(state);
+			})
+			.catch(function (output) {
+				state[version] = STATE_ERROR;
+				errors[version] = output;
+				updateState(state);
+			})
+			.then(function () {
+				var tmpPath = join(path, '.' + version + '.dockerfile');
 
-        return fs.unlink(tmpPath).catch(function () {});
-      });
-  })
-  .then(function () {
-    logUpdate.done();
+				return fs.unlink(tmpPath).catch(function () {});
+			});
+	})
+	.then(function () {
+		logUpdate.done();
 
-    // display output from failed node.js versions
-    Object.keys(errors).forEach(function (version) {
-      console.log('\n   ' + chalk.red(figures.cross + '  node v' + version + ':'));
-      console.log(errors[version]);
-    });
+		// display output from failed node.js versions
+		Object.keys(errors).forEach(function (version) {
+			console.log('\n   ' + chalk.red(figures.cross + '  node v' + version + ':'));
+			console.log(errors[version]);
+		});
 
-    process.exit(Object.keys(errors).length);
-  });
+		process.exit(Object.keys(errors).length);
+	});
 
 
 /**
@@ -109,9 +109,9 @@ getVersions()
  */
 
 function pull (context) {
-  var image = format('node:%s-onbuild', context.version);
+	var image = format('node:%s-onbuild', context.version);
 
-  return run('docker', ['pull', image]).return(context);
+	return run('docker', ['pull', image]).return(context);
 }
 
 
@@ -120,15 +120,15 @@ function pull (context) {
  */
 
 function build (context) {
-  var dockerfile = format('FROM node:%s-onbuild', context.version);
-  var tmpPath = join(path, '.' + context.version + '.dockerfile');
+	var dockerfile = format('FROM node:%s-onbuild', context.version);
+	var tmpPath = join(path, '.' + context.version + '.dockerfile');
 
-  return fs.writeFile(tmpPath, dockerfile)
-    .then(function () {
-      var image = format('test-%s-%s', context.name, context.version);
+	return fs.writeFile(tmpPath, dockerfile)
+		.then(function () {
+			var image = format('test-%s-%s', context.name, context.version);
 
-      return run('docker', ['build', '-t', image, '-f', tmpPath, '.']).return(context);
-    });
+			return run('docker', ['build', '-t', image, '-f', tmpPath, '.']).return(context);
+		});
 }
 
 
@@ -137,28 +137,28 @@ function build (context) {
  */
 
 function test (context) {
-  var image = format('test-%s-%s', context.name, context.version);
+	var image = format('test-%s-%s', context.name, context.version);
 
-  var env = {
-    CONTINUOUS_INTEGRATION: true,
-    TRAVIS: true,
-    CI: true
-  };
+	var env = {
+		CONTINUOUS_INTEGRATION: true,
+		TRAVIS: true,
+		CI: true
+	};
 
-  var args = [
-    'run',
-    '--rm'
-  ];
+	var args = [
+		'run',
+		'--rm'
+	];
 
-  Object.keys(env).forEach(function (name) {
-    var arg = format('%s=%s', name, env[name]);
+	Object.keys(env).forEach(function (name) {
+		var arg = format('%s=%s', name, env[name]);
 
-    args.push('-e', arg);
-  });
+		args.push('-e', arg);
+	});
 
-  args.push(image, 'npm', 'test');
+	args.push(image, 'npm', 'test');
 
-  return run('docker', args).return(context);
+	return run('docker', args).return(context);
 }
 
 
@@ -168,27 +168,27 @@ function test (context) {
  */
 
 function run (command, args, options) {
-  return new Promise(function (resolve, reject) {
-    var output = '';
+	return new Promise(function (resolve, reject) {
+		var output = '';
 
-    var ps = spawn(command, args, options);
+		var ps = spawn(command, args, options);
 
-    ps.on('close', function (code) {
-      if (code > 0) {
-        return reject(output);
-      }
+		ps.on('close', function (code) {
+			if (code > 0) {
+				return reject(output);
+			}
 
-      resolve();
-    });
+			resolve();
+		});
 
-    ps.stdout.on('data', function (data) {
-      output += data;
-    });
+		ps.stdout.on('data', function (data) {
+			output += data;
+		});
 
-    ps.stderr.on('data', function (data) {
-      output += data;
-    });
-  });
+		ps.stderr.on('data', function (data) {
+			output += data;
+		});
+	});
 }
 
 
@@ -197,43 +197,44 @@ function run (command, args, options) {
  */
 
 function updateState (state) {
-  var items = Object.keys(state).map(function (version) {
-    var message;
-    var icon;
+	var items = Object.keys(state).map(function (version) {
+		var message;
+		var icon;
 
-    switch (state[version]) {
-      case STATE_DOWNLOADING:
-        message = chalk.grey('downloading base image');
-        icon = chalk.grey(figures.circleDotted);
-        break;
+		switch (state[version]) {
+			case STATE_DOWNLOADING:
+				message = chalk.grey('downloading base image');
+				icon = chalk.grey(figures.circleDotted);
+				break;
 
-      case STATE_BUILDING:
-        message = chalk.grey('building environment');
-        icon = chalk.grey(figures.circleDotted);
-        break;
+			case STATE_BUILDING:
+				message = chalk.grey('building environment');
+				icon = chalk.grey(figures.circleDotted);
+				break;
 
-      case STATE_RUNNING:
-        message = chalk.grey('running');
-        icon = chalk.grey(figures.circleDotted);
-        break;
+			case STATE_RUNNING:
+				message = chalk.grey('running');
+				icon = chalk.grey(figures.circleDotted);
+				break;
 
-      case STATE_SUCCESS:
-        message = chalk.green('success');
-        icon = chalk.green(figures.tick);
-        break;
+			case STATE_SUCCESS:
+				message = chalk.green('success');
+				icon = chalk.green(figures.tick);
+				break;
 
-      case STATE_ERROR:
-        message = chalk.red('error');
-        icon = chalk.red(figures.cross);
-        break;
-    }
+			case STATE_ERROR:
+			default:
+				message = chalk.red('error');
+				icon = chalk.red(figures.cross);
+				break;
+		}
 
-    return [' ', icon, version + ':', message];
-  });
+		return [' ', icon, version + ':', message];
+	});
 
-  var output = '\n' + table(items, { align: ['l', 'l', 'r', 'l'] });
+	var output = '\n' + table(items, { align: ['l', 'l', 'r', 'l'] });
 
-  logUpdate(output);
+	logUpdate(output);
 }
 
 /**
@@ -241,29 +242,29 @@ function updateState (state) {
  */
 
 function getVersions () {
-  return fs.readFile(join(path, '.travis.yml'), 'utf-8')
-    .then(function (source) {
-      return yaml.parse(source).node_js || ['stable'];
-    })
-    .map(function (version) {
-      if (version === 'stable') {
-        return fetchStableVersion();
-      }
+	return fs.readFile(join(path, '.travis.yml'), 'utf-8')
+		.then(function (source) {
+			return yaml.parse(source).node_js || ['stable'];
+		})
+		.map(function (version) {
+			if (version === 'stable') {
+				return fetchStableVersion();
+			}
 
-      return version;
-    });
+			return version;
+		});
 }
 
 function copy (src, dest) {
-  var source = fs.readFileSync(src);
+	var source = fs.readFileSync(src);
 
-  fs.writeFileSync(dest, source);
+	fs.writeFileSync(dest, source);
 }
 
 function stat (path) {
-  try {
-    return fs.statSync(path);
-  } catch (_) {
-    return false;
-  }
+	try {
+		return fs.statSync(path);
+	} catch (_) {
+		return false;
+	}
 }

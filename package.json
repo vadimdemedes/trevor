@@ -29,7 +29,8 @@
   "xo": {
     "rules": {
       "no-multiple-empty-lines": 0,
-      "space-before-function-paren": 0
+      "space-before-function-paren": 0,
+      "object-curly-spacing": [2, "always"]
     }
   },
   "devDependencies": {
