@@ -1,11 +1,10 @@
-SRC = index.js
-
 default:
 	@echo "No default task"
 
+lint:
+	@./node_modules/.bin/xo --env=node
+
 test:
-	@./node_modules/.bin/ava
+	@./node_modules/.bin/mocha
 
-include node_modules/make-lint/index.mk
-
-.PHONY: test
+.PHONY: test lint
