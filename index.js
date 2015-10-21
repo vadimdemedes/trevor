@@ -117,6 +117,11 @@ getVersions(join(path, '.travis.yml'))
 			});
 	})
 	.then(function () {
+		if (!exists) {
+			return fs.unlink(join(path, '.dockerignore')).catch(function () { });
+		}
+	})
+	.then(function () {
 		logUpdate.done();
 
 		// display output from failed node.js versions
