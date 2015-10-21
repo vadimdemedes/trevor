@@ -17,6 +17,7 @@ var fs = require('mz/fs');
 var updateState = require('./lib/update-state');
 var getVersions = require('./lib/get-versions');
 var pullImage = require('./lib/pull-image');
+var parseConfig = require('./lib/parse-config');
 var states = require('./lib/states');
 var clean = require('./lib/clean');
 var build = require('./lib/build');
@@ -71,7 +72,9 @@ if (!exists) {
 var state = {};
 var errors = {};
 
-getVersions(join(path, '.travis.yml'))
+var config = parseConfig(join(path, '.travis.yml'));
+
+getVersions(config)
 	.map(function (version) {
 		var context = {
 			version: version,
