@@ -18,8 +18,12 @@ module.exports = copy;
  * Synchronously copy file
  */
 
-function copy (src, dest) {
-	var source = fs.readFileSync(src);
+function copy(src, dest) {
+	try {
+		var source = fs.readFileSync(src);
 
-	fs.writeFileSync(dest, source);
+		fs.writeFileSync(dest, source);
+	} catch (err) {
+		
+	}
 }
