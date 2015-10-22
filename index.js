@@ -59,6 +59,19 @@ var cli = meow({
  */
 
 var path = process.cwd();
+
+if (!stat(join(path, '.travis.yml'))) {
+	var message = chalk.red('error') + ' .travis.yml does not exist in the current directory';
+	console.log('\n  ' + message + '\n');
+	process.exit(1);
+}
+
+if (!stat(join(path, 'package.json'))) {
+	var message = chalk.red('error') + ' package.json does not exist in the current directory';
+	console.log('\n  ' + message + '\n');
+	process.exit(1);
+}
+
 var pkg = require(join(path, 'package.json'));
 
 // if there's no .dockerignore
