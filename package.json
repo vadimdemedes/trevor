@@ -21,6 +21,9 @@
     "text-table": "^0.2.0",
     "yamljs": "^0.2.4"
   },
+  "scripts": {
+    "test": "make lint"
+  },
   "files": [
     "index.js"
   ],
@@ -28,16 +31,10 @@
     "trevor": "index.js"
   },
   "xo": {
-    "rules": {
-      "no-multiple-empty-lines": 0,
-      "space-before-function-paren": 0,
-      "object-curly-spacing": [
-        2,
-        "always"
-      ]
-    }
+    "extends": "vdemedes"
   },
   "devDependencies": {
-    "xo": "^0.9.0"
+    "eslint-config-vdemedes": "^1.0.0",
+    "xo": "sindresorhus/xo"
   }
 }

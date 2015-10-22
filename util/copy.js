@@ -24,6 +24,6 @@ function copy(src, dest) {
 
 		fs.writeFileSync(dest, source);
 	} catch (err) {
-		
+
 	}
 }
