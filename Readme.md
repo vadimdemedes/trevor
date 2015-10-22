@@ -53,15 +53,6 @@ Output:
 
 ![](media/demo.gif)
 
-**Tip**: Set your test script in `package.json` in `scripts.test` and use the following Makefile:
-
-```
-test:
-  trevor
-```
-
-To run the tests via Trevor, run `make test`. Travis CI will continue to run your tests as before, by reading a command from `package.json`.
-
 
 ## License
 
