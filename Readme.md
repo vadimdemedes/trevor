@@ -1,4 +1,4 @@
-# Trevor
+# Trevor [![Build Status](https://travis-ci.org/vdemedes/trevor.svg?branch=master)](https://travis-ci.org/vdemedes/trevor)
 
 Your own Travis CI to run tests locally.
 
