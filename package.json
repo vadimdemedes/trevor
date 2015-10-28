@@ -1,6 +1,6 @@
 {
   "name": "trevor",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Your own Travis CI to run tests locally",
   "license": "MIT",
   "main": "index.js",
