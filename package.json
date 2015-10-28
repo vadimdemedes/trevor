@@ -25,7 +25,9 @@
     "test": "make lint"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "lib",
+    "util"
   ],
   "bin": {
     "trevor": "index.js"
