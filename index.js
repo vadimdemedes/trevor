@@ -85,6 +85,11 @@ var errors = {};
 
 var config = parseConfig(join(path, '.travis.yml'));
 
+if (config.language !== 'node_js') {
+	console.log('\n  ' + chalk.red('error') + ' only Node.js is supported\n');
+	process.exit(1);
+}
+
 getVersions(config)
 	.map(function (version) {
 		var context = {
