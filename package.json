@@ -22,7 +22,7 @@
     "yamljs": "^0.2.4"
   },
   "scripts": {
-    "test": "make lint"
+    "test": "xo"
   },
   "files": [
     "index.js",
@@ -33,10 +33,11 @@
     "trevor": "index.js"
   },
   "xo": {
-    "extends": "vdemedes"
+    "extends": "vdemedes",
+    "env": "node"
   },
   "devDependencies": {
-    "eslint-config-vdemedes": "^1.0.0",
+    "eslint-config-vdemedes": "*",
     "xo": "sindresorhus/xo"
   }
 }
