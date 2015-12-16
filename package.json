@@ -11,7 +11,7 @@
     "url": "https://github.com/vdemedes"
   },
   "dependencies": {
-    "bluebird": "^3.0.6",
+    "bluebird": "^3.1.1",
     "chalk": "^1.1.1",
     "figures": "^1.4.0",
     "log-update": "^1.0.1",
