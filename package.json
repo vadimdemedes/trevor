@@ -15,7 +15,7 @@
     "chalk": "^1.1.1",
     "figures": "^1.4.0",
     "log-update": "^1.0.1",
-    "meow": "^3.4.2",
+    "meow": "^3.7.0",
     "mz": "^2.0.0",
     "stable-node-version": "^1.0.0",
     "text-table": "^0.2.0",
