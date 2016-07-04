@@ -37,7 +37,7 @@
     "env": "node"
   },
   "devDependencies": {
-    "eslint-config-vdemedes": "*",
+    "eslint-config-vdemedes": "1.0.1",
     "xo": "sindresorhus/xo"
   }
 }
