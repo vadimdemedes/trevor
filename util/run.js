@@ -4,8 +4,10 @@
  * Dependencies
  */
 
-var Promise = require('bluebird');
-var spawn = require('child_process').spawn;
+var
+	spawn = require('child_process').spawn,
+	Promise = require('bluebird');
+
 
 
 /**
