@@ -49,6 +49,6 @@
     "istanbul": "^0.4.2",
     "jshint": "^2.8.0",
     "mocha": "^2.2.5",
-    "mocha-lcov-reporter": "^1.2.0
+    "mocha-lcov-reporter": "^1.2.0"
   }
 }
