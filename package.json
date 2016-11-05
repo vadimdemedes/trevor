@@ -1,14 +1,17 @@
 {
-  "name": "trevor",
-  "version": "1.1.4",
+  "name": "trevorci",
+  "version": "1.1.12",
   "description": "Your own Travis CI to run tests locally",
   "license": "MIT",
   "main": "index.js",
-  "repository": "vdemedes/trevor",
+  "repository": "https://github.com/direktspeed/trevorci",
   "author": {
-    "name": "Vadim",
-    "email": "vdemedes@gmail.com",
-    "url": "https://github.com/vdemedes"
+    "name": "Frank Lemanschik",
+    "email": "frank@dspeed.eu",
+    "url": "https://github.com/direktspeed/trevorci"
+  },
+  "bin": {
+    "trevor": "./bin/trevor"
   },
   "dependencies": {
     "bluebird": "^3.0.6",
@@ -22,22 +25,31 @@
     "yamljs": "^0.2.4"
   },
   "scripts": {
-    "test": "xo"
+    "test": "exit 0",
+    "test:real": "npm run jshint && npm run mocha",
+    "jshint": "jshint lib/. bin/donejs test/. --config",
+    "mocha": "mocha test/test --timeout 120000",
+    "document:watch": "documentjs --watch",
+    "document": "documentjs -f && cp docs/theme/static/favicon.ico site/favicon.ico",
+    "publish": "git push origin && git push origin --tags",
+    "release:prerelease": "npm version prerelease && npm publish",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish",
+    "coverage": "istanbul cover _mocha -- test/test --timeout 120000",
+    "coverage:upload": "istanbul cover _mocha --report lcovonly -- test/ --timeout 600000 && cat ./coverage/lcov.info | ./node_modules/coveralls-send/bin/coveralls.js"
   },
   "files": [
+    "bin/trevor",
     "index.js",
     "lib",
     "util"
   ],
-  "bin": {
-    "trevor": "index.js"
-  },
-  "xo": {
-    "extends": "vdemedes",
-    "env": "node"
-  },
   "devDependencies": {
-    "eslint-config-vdemedes": "*",
-    "xo": "sindresorhus/xo"
+    "coveralls-send": "0.0.2",
+    "istanbul": "^0.4.2",
+    "jshint": "^2.8.0",
+    "mocha": "^2.2.5",
+    "mocha-lcov-reporter": "^1.2.0"
   }
 }
