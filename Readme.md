@@ -56,4 +56,4 @@ Output:
 
 ## License
 
-MIT © [Vadim Demedes](https://github.com/vdemedes)
+MIT © [Vadim Demedes](https://github.com/vadimdemedes)
