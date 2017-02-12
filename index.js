@@ -13,10 +13,12 @@ var chalk = require('chalk');
 var join = require('path').join;
 var meow = require('meow');
 var fs = require('mz/fs');
+var format = require('util').format;
 
 var updateState = require('./lib/update-state');
 var getVersions = require('./lib/get-versions');
 var pullImage = require('./lib/pull-image');
+var service = require('./lib/service');
 var parseConfig = require('./lib/parse-config');
 var states = require('./lib/states');
 var clean = require('./lib/clean');
@@ -92,11 +94,21 @@ if (config.language !== 'node_js') {
 
 getVersions(config)
 	.map(function (version) {
+		state[version] = states.preparing;
+		updateState(state);
+
+		return version;
+	})
+	.tap(function () {
+		return Promise.resolve(config.services).map(service.pull);
+	})
+	.map(function (version) {
 		var context = {
-			version: version,
+			version: format('%s-onbuild', version),
 			name: pkg.name.toLowerCase(),
 			path: path,
-			args: cli.flags
+			args: cli.flags,
+			services: config.services
 		};
 
 		return Promise.resolve(context)
