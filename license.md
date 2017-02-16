@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) Vadim Demedes <vdemedes@gmail.com> (https://github.com/vdemedes)
+Copyright (c) Vadim Demedes <vdemedes@gmail.com> (https://vadimdemedes.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
