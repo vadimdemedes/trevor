@@ -9,7 +9,7 @@
     "test": "xo"
   },
   "files": [
-    "index.js",
+    "cli.js",
     "lib"
   ],
   "bin": "cli.js",
