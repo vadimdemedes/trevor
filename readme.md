@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img width="310" src="media/logo.png">
+  <img width="310" src="media/logo.png?raw=true">
   <br>
   <br>
 </h1>
@@ -18,7 +18,7 @@ But I don't want to switch versions manually using `n`/`nvm` or push the code to
 That's why I created Trevor. It reads `.travis.yml` and runs tests in all versions you requested, just like Travis CI.
 Now, you can test before push and keep your git history clean.
 
-<img width="524" src="media/demo.gif">
+<img width="524" src="media/demo.gif?raw=true">
 
 
 ## Requirements
