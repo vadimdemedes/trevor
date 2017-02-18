@@ -5,6 +5,9 @@
   "license": "MIT",
   "repository": "vadimdemedes/trevor",
   "author": "Vadim Demedes <vdemedes@gmail.com",
+  "engines": {
+    "node": ">= 6"
+  },
   "scripts": {
     "test": "xo"
   },
