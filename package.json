@@ -21,6 +21,7 @@
     "cp-file": "^4.1.1",
     "execa": "^0.6.0",
     "figures": "^2.0.0",
+    "indent-string": "^3.1.0",
     "load-json-file": "^2.0.0",
     "log-update": "^1.0.2",
     "meow": "^3.7.0",
