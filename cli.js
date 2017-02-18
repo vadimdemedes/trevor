@@ -28,8 +28,14 @@ const cwd = process.cwd();
 
 main({cwd})
 	.then(state => {
-		const states = Object.keys(state).map(version => state[version]);
-		const hasErrors = states.indexOf(STATE_ERROR) >= 0;
+		let hasErrors = false;
+
+		for (const currentState of state.values()) {
+			if (currentState === STATE_ERROR) {
+				hasErrors = true;
+				break;
+			}
+		}
 
 		process.exit(hasErrors ? 1 : 0);
 	})
