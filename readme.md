@@ -24,6 +24,7 @@ Now, you can test before push and keep your git history clean.
 ## Requirements
 
 - [Docker](https://www.docker.com)
+- [NPM](https://www.npmjs.com/)
 
 
 ## Installation
