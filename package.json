@@ -1,6 +1,6 @@
 {
   "name": "trevor",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Your own Travis CI to run tests locally",
   "license": "MIT",
   "repository": "vadimdemedes/trevor",
