@@ -5,6 +5,7 @@
   "license": "MIT",
   "repository": "vadimdemedes/trevor",
   "author": "Vadim Demedes <vdemedes@gmail.com",
+  "main": "./lib/main.js",
   "engines": {
     "node": ">= 6"
   },
